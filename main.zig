@@ -10,6 +10,12 @@ const value_type = union(tagged_value){
     integer: i32,
 };
 
+//TODO: List
+//1 Move metadata reading into its own function
+//2 Add function to read a portion of data of a given size into a buffer
+//  (Include error handling for EOF or file read errors)
+//3 Move to library with C interoperability for use in ByteWave
+
 fn formatted_print(offset: u64, bytes: usize, identifier: []const u8, value: value_type) !void {
     //"Offset  | Bytes   | Identifier      | Value   "
     const writer = std.io.getStdOut().writer();
