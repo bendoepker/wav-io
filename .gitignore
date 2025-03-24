@@ -1,0 +1,14 @@
+#-----------------------------------------------#
+# Zig build ignores for potential zig additions #
+#-----------------------------------------------#
+.zig-cache/
+zig-out/
+/release/
+/debug/
+/build/
+/build-*/
+/docgen_tmp/
+*.exe
+*.pdb
+*.obj
+*.wav
