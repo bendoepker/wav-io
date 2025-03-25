@@ -5,7 +5,7 @@ const std = @import("std");
 //NOTE: The const fields in the wav metadata are used for verification of any
 //      wav files being read and for writing the header for wav files being created
 const wav_metadata = struct {
-    ChunkID: []const u8 = "WAVE",
+    ChunkID: []const u8 = "RIFF",
     ChunkSize: i32,
     Format: []const u8 = "WAVE",
     SubChunk1ID: []const u8 = "fmt ",
@@ -46,12 +46,12 @@ fn read_metadata(file: std.fs.File) !wav_metadata {
     //Format [Bytes 8-11]
     var Format: [4]u8 = undefined;
     num_read = try reader.readAll(&Format);
-    if(std.mem.eql(u8, &Format, metadata_out.Format)) { return error.InvalidMetadata; }
+    if(std.mem.eql(u8, &Format, metadata_out.Format)) return error.InvalidMetadata;
 
     //SubChunk1ID [Bytes 12-15]
     var SubChunk1ID: [4]u8 = undefined;
     num_read = try reader.readAll(&SubChunk1ID);
-    if(std.mem.eql(u8, &SubChunk1ID, metadata_out.SubChunk1ID)) { return error.InvalidMetadata; }
+    if(std.mem.eql(u8, &SubChunk1ID, metadata_out.SubChunk1ID)) return error.InvalidMetadata;
 
     //SubChunk1Size [Bytes 16-19]
     var SubChunk1Size: [4]u8 = undefined;
@@ -97,7 +97,7 @@ fn read_metadata(file: std.fs.File) !wav_metadata {
         var ExtraParamSize: [2]u8 = undefined;
         num_read = try reader.readAll(&ExtraParamSize);
         metadata_out.ExtraParamSize = @bitCast(ExtraParamSize);
-        if(metadata_out.ExtraParamSize != extra_data_size) { return error.MalformedExtraParams; }
+        if(metadata_out.ExtraParamSize != extra_data_size) return error.MalformedExtraParams;
 
         //Extra Params
         const ExtraParams: []u8 = undefined;
@@ -108,7 +108,7 @@ fn read_metadata(file: std.fs.File) !wav_metadata {
     //Sub Chunk 2 ID [Bytes 36-39 ( + 2 + ExtraParamSize)]
     var SubChunk2ID: [4]u8 = undefined;
     num_read = try reader.readAll(&SubChunk2ID);
-    if(std.mem.eql(u8, metadata_out.SubChunk2ID, &SubChunk2ID)) { return error.InvalidMetadata; }
+    if(std.mem.eql(u8, metadata_out.SubChunk2ID, &SubChunk2ID)) return error.InvalidMetadata;
 
     //Sub Chunk 2 Size [Bytes 40-43 ( + 2 + ExtraParamSize)]
     var SubChunk2Size: [4]u8 = undefined;
@@ -119,12 +119,12 @@ fn read_metadata(file: std.fs.File) !wav_metadata {
     //Byte Rate Verification
     if(metadata_out.ByteRate != 
         (metadata_out.SampleRate * metadata_out.NumChannels * (@divExact(metadata_out.BitsPerSample, 8)))
-        ){ return error.MalformedMetadata; }
+        ) return error.MalformedMetadata;
 
     //Block Align Verification
     if(metadata_out.BlockAlign !=
         (metadata_out.NumChannels * (@divExact(metadata_out.BitsPerSample, 8)))
-        ){ return error.MalformedMetadata; }
+        ) return error.MalformedMetadata;
 
     metadata_out.DataPos = try file.getPos();
 
@@ -140,7 +140,10 @@ pub fn main() !void {
     const input_file = try std.fs.cwd().openFile("test.wav", .{});
     defer input_file.close();
 
-    const md = try read_metadata(input_file);
+    const md = read_metadata(input_file) catch |err| {
+        std.log.err("Error reading metadata: {s}", .{@errorName(err)});
+        return;
+    };
 
     try writer.print("ChunkID: {s}\n", .{md.ChunkID});
     try writer.print("ChunkSize: {d}\n", .{md.ChunkSize});
