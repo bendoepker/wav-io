@@ -10,3 +10,11 @@ Build steps: (Currently everything is self contained in the main function)
 > ```
 > zig build-exe main.zig
 > ```
+
+This also has a parallel defined c library
+
+C Build steps: (Currently everything is self contained in the main function / file)
+---------
+> ```
+> gcc -o main.exe main.c
+> ```
