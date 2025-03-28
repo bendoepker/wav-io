@@ -27,6 +27,7 @@
 //          Cons
 //              Error prone
 //              Needs to be macroed to hell for cross platform ability
+//      4: The wav_read and wav_write function can be simplified by 
 
 static const char* CHUNK_ID_C = "RIFF";
 static const char* FORMAT_C = "WAVE";
@@ -50,19 +51,17 @@ typedef struct wav_metadata {
     int16_t audio_format;       //This should be 1 for PCM (Integer) or 3 for IEEE754 (floating point)
     int16_t num_channels;
     int32_t sample_rate;
+
+
+    //Remove the next two since they are calculatable
     int32_t byte_rate;          //This can be calculated as sample_rate * num_channels * bits_per_sample/8
     int16_t block_align;        //This can be calculated as num_channels * bits_per_sample/8 
-                                //(Number of Bytes for one sample from all channels)
-    int16_t bits_per_sample;
 
-    //Not Currently Handling These fields
-    //int16_t extra_param_size; //These ExtraParams are for Non PCM or IEEE754 data (probably will not be used)
-    //uint8_t* extra_params;    //This needs to be malloced and freed
+    int16_t bits_per_sample;    //Number of Bits in each sample (f32 -> 32)
 
-                                //(and should be set to 0 until the file is done being written, then calculated)
     uint64_t data_pos;          //This is the location (in bytes) of the first sample in the file
     uint64_t num_samples;       //This is the number of samples in the data block (for stereo audio both
-                                //channels are contained in the same "sample"
+                                //channels are contained in the same "sample")
 } wav_metadata;
 
 typedef enum tagged_value {
@@ -85,6 +84,24 @@ void destroy_wav_metadata(wav_metadata* metadata);
 //Read and write the contents of @param metadata to and from a file
 error_code read_wav_metadata(wav_metadata* metadata);
 error_code write_wav_metadata(wav_metadata* metadata);
+
+error_code open_wav_read(char* file_name,
+                         int16_t* audio_format,
+                         int16_t* num_channels,
+                         int32_t* sample_rate,
+                         int16_t* bits_per_sample,
+                         int64_t* data_pos,
+                         int64_t* num_samples);
+
+error_code open_wav_write(int16_t audio_format,
+                          int16_t num_channels,
+                          int32_t sample_rate,
+                          int16_t bits_per_sample,
+                          int64_t num_sam);
+
+//Read and write data to a wav file
+error_code read_wav_data(wav_metadata* metadata, void* data, size_t data_len);
+error_code write_wav_data(wav_metadata* metadata, void* data, size_t data_len);
 
 //Print the metadata info to stdout
 void print_metadata(wav_metadata* metadata);
